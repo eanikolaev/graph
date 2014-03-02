@@ -5,8 +5,8 @@ CREATE TABLE employee (
 
 
 CREATE TABLE hierarchy (
-    id integer references employee not null unique,
-    parent integer references employee not null
+    id integer references employee ON DELETE CASCADE not null unique,
+    parent integer references employee ON DELETE SET NULL not null 
 );
 
 
