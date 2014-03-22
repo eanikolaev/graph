@@ -32,6 +32,7 @@ INSERT INTO employee (id, name) VALUES
     (19, 'Clarita Guerra'),
     (20, 'Mary Cole');
 
+ALTER SEQUENCE employee_id_seq RESTART WITH 21;
 
 INSERT INTO hierarchy (id, parent) VALUES
 --    (1, -1), 
