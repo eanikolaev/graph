@@ -5,8 +5,8 @@ CREATE TABLE employee (
 
 
 CREATE TABLE hierarchy (
-    id integer references employee ON DELETE CASCADE not null unique,
-    parent integer references employee ON DELETE SET NULL not null 
+    id integer references employee ON DELETE CASCADE primary key,
+    parent integer references hierarchy not null 
 );
 
 
@@ -35,7 +35,7 @@ INSERT INTO employee (id, name) VALUES
 ALTER SEQUENCE employee_id_seq RESTART WITH 21;
 
 INSERT INTO hierarchy (id, parent) VALUES
---    (1, -1), 
+    (1,  1), 
     (2,  1),
     (3,  1),
     (4,  1),
