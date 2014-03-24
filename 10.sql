@@ -7,21 +7,22 @@ BEGIN
         RETURN NEXT;
         id := id + 1;
       END LOOP;
-    RETURN;    
+    RETURN;
 END
-$$ LANGUAGE plpgsql; 
+$$ LANGUAGE plpgsql;
 
 
 CREATE OR REPLACE FUNCTION get_way_up (
     start_name varchar(50),
-    start_depth integer
+    start_depth integer,
+    step integer
 ) RETURNS TABLE (id integer, depth integer) AS $$
 BEGIN
     RETURN QUERY
     WITH RECURSIVE parents(id, depth) AS (
         SELECT employee.id, $2 FROM employee WHERE employee.name=$1
     UNION ALL
-        SELECT hierarchy.parent, parents.depth+1 FROM hierarchy, parents WHERE hierarchy.id = parents.id AND hierarchy.id <> 1
+        SELECT hierarchy.parent, parents.depth+$3 FROM hierarchy, parents WHERE hierarchy.id = parents.id AND hierarchy.id <> 1
     )
     (SELECT parents.id, parents.depth FROM parents);
 END
@@ -34,36 +35,31 @@ CREATE OR REPLACE FUNCTION get_way (
 ) RETURNS TABLE (name varchar(50)) AS $$
 DECLARE
     max integer;
-    start_id integer;
-    finish_id integer;
-BEGIN        
+    w1 integer ARRAY;
+    w2 integer ARRAY;
+    w integer ARRAY;
+    i integer;
+    j integer;
+    n integer;
+BEGIN
     SELECT count(*) INTO max FROM employee;
-    RETURN QUERY
-    SELECT employee.name
-    FROM employee
-    WHERE employee.id in
-    (SELECT id
-    FROM
-      (
-        (SELECT get_way_up($1,1))
-         UNION
-        (SELECT get_way_up($2,max))
-      ) as way
-    );
-/*    RETURN QUERY
-    SELECT name FROM (SELECT id FROM way1 UNION SELECT id FROM way2 ORDER BY 2) as way left join employee ON employee.id=way.id;   
-
-    i := 0;
+    w1 := ARRAY(select way.id from get_way_up($1, 1, 1) as way ORDER BY way.depth);
+    w2 := ARRAY(select way.id from get_way_up($2, max*2+1, -1) as way ORDER BY way.depth);
+    i := 1;
+    n := array_length(w2, 1);
     LOOP
-        i = i + 1;
-        EXIT WHEN w1[i] = w2[0];
+        j := 1;
+        LOOP
+            EXIT WHEN w2[j]=w1[i];
+            j := j+1;
+            EXIT WHEN j>n;
+        END LOOP;
+        EXIT WHEN j<=n;
+        i := i+1;
     END LOOP;
-    
-    w = w1[1:i] || w2;
-*/
-/*    RETURN QUERY
-    SELECT employee.name FROM employee;*/
-  /*  SELECT employee.name FROM employee, unnest_rownum(w) as t(id,el) WHERE t.el=employee.id ORDER BY t.id;*/
+    w := w1[1:i-1] || w2[j:n];
+    RETURN QUERY
+    SELECT employee.name FROM employee, unnest_rownum(w) as t(id,el) WHERE t.el=employee.id ORDER BY t.id;
 END
 $$ LANGUAGE plpgsql;
 
